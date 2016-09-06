@@ -4,12 +4,12 @@ const Promise = require('promise');
 const readdirPromise = Promise.denodeify(fs.readdir);
 const statPromise = Promise.denodeify(fs.stat);
 
-// These functions do the same
+ /*
+ * These functions do the same.
+ * They list all the files in this directory that weight more than 1.5MB.
+ */
 
 const searchWithAsync = () => {
-
-  console.log('Searching for text files that weight more than 1.5MB');
-
   async.waterfall([
     callback => fs.readdir('.', callback),
     (files, callback) => {
@@ -25,9 +25,6 @@ const searchWithAsync = () => {
 }
 
 const searchWithPromises = () => {
-  
-  console.log('Searching for text files that weight more than 1.5MB');
-
   readdirPromise('.')
     .then(files => files.filter(file => file.endsWith('.txt')))
     .then(textFiles => textFiles.map(file => statPromise(file).then(({ size }) => Promise.resolve({ file, size }))))
@@ -36,4 +33,6 @@ const searchWithPromises = () => {
     .then(filtered => console.log(filtered.map(f => f.file)))
 }
 
-searchWithPromises()
+console.log('Searching for text files that weight more than 1.5MB');
+// searchWithPromises()
+searchWithAsync()
