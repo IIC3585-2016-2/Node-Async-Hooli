@@ -1,27 +1,20 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Title</title>
+
+<head>
+    <title>Async - Hooli</title>
     <meta charset="utf-8">
-    <style>
-      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
-      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
-      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+    <link rel="stylesheet" type="text/css" href="./assets/style.css">
+</head>
 
-      body { font-family: 'Droid Serif'; }
-      h1, h2, h3 {
-        font-family: 'Yanone Kaffeesatz';
-        font-weight: normal;
-      }
-      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
-    </style>
-  </head>
-  <body>
-    <textarea id="source">
+<body>
+    <textarea id="source" style="display:none;">
 
-class: center, middle
+class: center, middle, inverse
 
 # Async
+
+### Jaime Castro - Vicente Dragicevic
 
 ---
 
@@ -29,27 +22,261 @@ class: center, middle
 
 1. Introducción
 2. Deep-dive
-3. Conclusión
+3. Comentarios finales
 
 ---
+class: center, middle, inverse
 
 # Introducción
 
-
 ---
+# Definiendo Async
+
+.left-column[
+## Async es
+
+Una librería que provee herramientas para trabajar con JavaScript asíncrono en Node.js:
+
+- Programación funcional
+- Control de ejecución asíncrono
+
+Soluciona en parte el **callback hell**.
+]
+
+.right-column[
+## Async no es
+
+- Necesariamente mejor o peor que las Promesas de ES6.
+- Una librería para asincronizar funciones.
+]
+---
+
+class: center, middle, inverse
 
 # Deep-dive
 
+---
+
+# Collections
+
+Async provee funciones para manipular *collections*, como arreglos y objetos. Ejemplos:
+
+- `filter`
+- `map`
+- `reduce`
+- `some`
+
+La mayoría de las funciones tienen tres versiones:
+
+- **Normal: ** Realiza operaciones sobre una *collection* de forma asíncrona.
+- **Limit: ** Realiza hasta un número `n` de operaciones asíncronas simultáneas.
+- **Series: ** Realiza todas las operaciones en forma serial.
 
 ---
 
-# Conclusión
+# Collections: Map
+
+### Firmas
+
+.center[
+```javascript
+map(collection, func, callback) // Normal
+
+mapLimit(collection, limit, func, callback) // Limit
+
+mapSeries(collection, func, callback) // Series
+```
+]
+
+### Uso
+
+- `collection`: Array, Iterable u Object.
+- `func(item, callback(err, transformed){...})`: función a aplicar a cada elemento .red[*].
+- `callback(err, results)`: se ejecuta cuando todas las operaciones estén listas o haya un error.
+
+.footnote[.red[*] Importante que sea asíncrona.]
+---
+
+# Collections: Map
+
+.left-column[
+## Async
+```javascript
+const readAllWithAsync = filenames => {
+  async.map(filenames,
+    fs.readFile,
+    (err, files) => {
+      console.log('Result: ', files);
+      console.log('All files have been read.');
+  });
+}
+```
+]
+
+.right-column[
+## Promises
+```javascript
+const readFile = Promise.denodeify(fs.readFile);
+
+const readAllWithPromises = filenames => {
+  const promises = filenames.map(file => readFile(file));
+  Promise.all(promises).then(files => {
+    console.log('Result: ', files);
+    console.log('All files have been read.');
+  });
+}
+```
+]
+
+---
+
+# Collections: Filter
+
+.small[
+
+.left-column[
+## Async
+```javascript
+const filterAsync = filenames => {
+  async.filter(
+    filenames,
+    (file, callback) => fs.exists(file, exists => callback(null, exists)),
+    (err, files) => console.log('Result: ', files)
+  );
+}
+```
+]
+]
+
+.small[
+.right-column[
+## Promises
+```javascript
+const filterWithPromises = filenames => {
+  const accumulator = [];
+  let ready = Promise.resolve(null);
+
+  filenames.forEach(file => {
+    ready = ready.then(() => {
+      return new Promise(fulfill => {
+        exists(file)
+        .then(() => accumulator.push(file))
+        .catch();
+      })
+    });
+  });
+
+  ready.then(() => console.log(accumulator));
+}
+```
+]
+]
+
+---
+
+# Control de flujo asíncrono: parallel
+
+Permite ejecutar un número arbitrario de funciones sin esperar que alguna termine .red[*], y recolectar el resultado de cada una de ellas.
+
+Se detiene ante la primera falla.
+
+```javascript
+async.parallel([f1, f2, f3, ...], function(err, results){
+  // Do something with this
+})
+```
+
+.footnote[.red[*] Otra vez: Cada función debe ser asíncrona]
+---
+
+# Control de flujo asíncrono: waterfall
+
+Ejecuta un conjunto de funciones en cadena. El resultado de una se pasa a la siguiente como parámetro. Se puede recuperar el resultado de la última función.
+
+Ante una falla, se llama al callback inmediatamente.
+
+```javascript
+async.waterfall([f1, f2, f3, ...], function(err, result){
+  // Do something with this
+})
+```
+
+---
+
+# Control de flujo asíncrono: series
+
+Permite ejecutar un número arbitrario de funciones una después de la otra, y recolectar el resultado de cada una de ellas.
+
+Se detiene ante la primera falla.
+
+```javascript
+async.series([f1, f2, f3, ...], function(err, results){
+  // Do something with this
+})
+```
+
+---
+
+# Control de flujo asíncrono: auto
+
+Supongamos que tenemos un conjunto de tareas (asíncronas) dependientes entre sí.
+
+.center[![Tasks](./assets/images/topsort.jpg)]
+
+Async ofrece una forma sencilla de resolver estas dependencias.
+
+---
+
+# Control de flujo asíncrono: auto
+
+`async.auto` recibe un objeto donde:
+
+.center[
+|Tipo de función|Key|Value|
+|:-------------:|:-:|:---|
+|Independiente|Nombre de la función|`function(callback){...}`|
+|Dependiente|Nombre de la función|`[dep1, dep2, ..., function(results, callback){...}]`.red[*]|
+]
+
+- Async se encarga de ejecutar todas las funciones cuando sus dependencias hayan sido satisfechas.
+- Usa el algoritmo de Kahn .red[†]
+
+.footnote[
+.red[*]`results` es un objeto con los resultados de las funciones ya ejecutadas
+.red[†] [Topological sorting - Wikipedia](https://en.wikipedia.org/wiki/Topological_sorting#Kahn.27s_algorithm)
+]
+---
+
+# Utilidades varias: asyncify
+
+"Take a sync function and make it async, passing its return value to a callback"
+
+## Ejemplo
+
+```javascript
+async.asyncify(JSON.parse)
+```
+
+
+---
+class: center, middle, inverse
+
+# Comentarios finales
+
+---
+
+# Comentarios
 
     </textarea>
-    <script src="https://iic3585-2016-2.github.io/Node-Async-Hooli/assets/remark.min.js">
+    <script src="./assets/remark.min.js">
     </script>
     <script>
-      var slideshow = remark.create();
+        var slideshow = remark.create({
+            ratio: '16:9',
+            highlightStyle: 'monokai',
+            highlightLines: true
+        });
     </script>
-  </body>
+</body>
+
 </html>
