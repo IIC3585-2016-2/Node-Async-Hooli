@@ -27,15 +27,16 @@ const readAllWithAsync = filenames => {
 
 
 // TODO: FIX THIS
-const stat = Promise.denodeify(fs.stat);
-const filterPromises = filenames => {
+const exists = Promise.denodeify(fs.exists);
+
+const filterWithPromises = filenames => {
   const accumulator = [];
   let ready = Promise.resolve(null);
 
   filenames.forEach(file => {
     ready = ready.then(() => {
       return new Promise(fulfill => {
-        stat(file)
+        exists(file)
         .then(() => accumulator.push(file))
         .catch();
       })
@@ -45,14 +46,13 @@ const filterPromises = filenames => {
   ready.then(() => console.log(accumulator));
 }
 
-
 const filterAsync = filenames => {
   async.filter(
     filenames,
-    (file, callback) => fs.stat(file, err => callback(null, !err)),
+    (file, callback) => fs.exists(file, exists => callback(null, exists)),
     (err, files) => console.log('Result: ', files)
   );
 }
 
-const filenames = ['file1.txt', 'file2.txt', 'file3.txt'];
-readAllWithAsync(filenames);
+const filenames = ['file5.txt', 'file2.txt', 'file3.txt'];
+filterAsync(filenames);
