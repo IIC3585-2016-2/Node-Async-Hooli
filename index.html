@@ -22,7 +22,8 @@ class: center, middle, inverse
 
 1. Introducción
 2. Deep-dive
-3. Comentarios finales
+    1. Collections
+    2. Control de flujo asíncrono
 
 ---
 class: center, middle, inverse
@@ -30,7 +31,7 @@ class: center, middle, inverse
 # Introducción
 
 ---
-# Definiendo Async
+# Definiendo [Async](http://caolan.github.io/async/)
 
 .left-column[
 ## Async es
@@ -128,13 +129,17 @@ const readAllWithPromises = filenames => {
 ```
 ]
 
+.footnote[
+[Ejemplo Map-Async](https://github.com/IIC3585-2016-2/Node-Async-Hooli/blob/master/code/filter-readall.js#L19)
+|
+[Ejemplo Map-Promises](https://github.com/IIC3585-2016-2/Node-Async-Hooli/blob/master/code/filter-readall.js#L9)
+]
+
 ---
 
 # Collections: Filter
 
-.small[
-
-.left-column[
+.small[.left-column[
 ## Async
 ```javascript
 const filterAsync = filenames => {
@@ -145,11 +150,9 @@ const filterAsync = filenames => {
   );
 }
 ```
-]
-]
+]]
 
-.small[
-.right-column[
+.small[.right-column[
 ## Promises
 ```javascript
 const filterWithPromises = filenames => {
@@ -169,9 +172,13 @@ const filterWithPromises = filenames => {
   ready.then(() => console.log(accumulator));
 }
 ```
-]
-]
+]]
 
+.footnote[
+[Ejemplo Filter-Async](https://github.com/IIC3585-2016-2/Node-Async-Hooli/blob/master/code/filter-readall.js#L46)
+|
+[Ejemplo Filter-Promises](https://github.com/IIC3585-2016-2/Node-Async-Hooli/blob/master/code/filter-readall.js#L32)
+]
 ---
 
 # Control de flujo asíncrono: parallel
@@ -181,12 +188,24 @@ Permite ejecutar un número arbitrario de funciones sin esperar que alguna termi
 Se detiene ante la primera falla.
 
 ```javascript
-async.parallel([f1, f2, f3, ...], function(err, results){
-  // Do something with this
-})
+async.parallel([f1, f2, f3, ...], function(err, results){ /*Do something*/ })
 ```
 
-.footnote[.red[*] Otra vez: Cada función debe ser asíncrona]
+Muy similar a
+
+```javascript
+Promise.all([p1, p2, p3 ...])
+  .then(results => { /*Do something*/ })
+  .catch(err => { /*Handle error*/ })
+```
+
+.footnote[
+.red[*] Otra vez: Cada función debe ser asíncrona
+|
+[Ejemplo Mailer Async](https://github.com/IIC3585-2016-2/Node-Async-Hooli/blob/master/code/mailerAsync.js)
+|
+[Ejemplo Mailer Promises](https://github.com/IIC3585-2016-2/Node-Async-Hooli/blob/master/code/mailerPromises.js)
+]
 ---
 
 # Control de flujo asíncrono: waterfall
@@ -196,11 +215,19 @@ Ejecuta un conjunto de funciones en cadena. El resultado de una se pasa a la sig
 Ante una falla, se llama al callback inmediatamente.
 
 ```javascript
-async.waterfall([f1, f2, f3, ...], function(err, result){
-  // Do something with this
-})
+async.waterfall([f1, f2, f3, ...], function(err, result){ /*Do something*/ })
 ```
 
+Muy similar a
+
+```javascript
+p1.then(p2).then(p3).then(result => { /*Do something*/ }).catch(err => { /*Handle error*/ })
+```
+.footnote[
+[Ejemplo Async](https://github.com/IIC3585-2016-2/Node-Async-Hooli/blob/master/code/fileSearch.js#L12)
+|
+[Ejemplo Promises](https://github.com/IIC3585-2016-2/Node-Async-Hooli/blob/master/code/fileSearch.js#L27)
+]
 ---
 
 # Control de flujo asíncrono: series
@@ -243,7 +270,10 @@ Async ofrece una forma sencilla de resolver estas dependencias.
 
 .footnote[
 .red[*]`results` es un objeto con los resultados de las funciones ya ejecutadas
+|
 .red[†] [Topological sorting - Wikipedia](https://en.wikipedia.org/wiki/Topological_sorting#Kahn.27s_algorithm)
+|
+[Ejemplo de la documentación](https://github.com/IIC3585-2016-2/Node-Async-Hooli/blob/master/code/async-auto.js)
 ]
 ---
 
@@ -261,11 +291,8 @@ async.asyncify(JSON.parse)
 ---
 class: center, middle, inverse
 
-# Comentarios finales
+# That's all folks!
 
----
-
-# Comentarios
 
     </textarea>
     <script src="./assets/remark.min.js">
